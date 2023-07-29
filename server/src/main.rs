@@ -1,5 +1,6 @@
 use std::env;
 use actix_web::{get, App, HttpResponse, HttpServer, Responder};
+use actix_cors::Cors;
 use serde::Serialize;
 use tokio_postgres::{NoTls, Error};
 
@@ -48,7 +49,7 @@ async fn get_technologies() -> Result<Vec<Technology>, Error> {
     Ok(technologies)
 }
 
-#[get("/technologies")]
+#[get("/api/technologies")]
 async fn get_technologies_handler() -> impl Responder {
     match get_technologies().await {
         Ok(technologies) => HttpResponse::Ok().json(technologies),
@@ -61,7 +62,15 @@ async fn get_technologies_handler() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(get_technologies_handler))
+    HttpServer::new(|| {
+        let cors_policy = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header();
+        App::new()
+            .wrap(cors_policy)
+            .service(get_technologies_handler)
+    })
         .bind("0.0.0.0:8080")?
         .run()
         .await
